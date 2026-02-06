@@ -13,6 +13,7 @@ pub struct Shaders {
     pub border: Option<ShaderProgram>,
     pub shadow: Option<ShaderProgram>,
     pub clipped_surface: Option<GlesTexProgram>,
+    pub saturated_surface: Option<GlesTexProgram>,
     pub resize: Option<ShaderProgram>,
     pub gradient_fade: Option<GlesTexProgram>,
     pub custom_resize: RefCell<Option<ShaderProgram>>,
@@ -84,10 +85,21 @@ impl Shaders {
                     UniformName::new("geo_size", UniformType::_2f),
                     UniformName::new("corner_radius", UniformType::_4f),
                     UniformName::new("input_to_geo", UniformType::Matrix3x3),
+                    UniformName::new("niri_saturation", UniformType::_1f),
                 ],
             )
             .map_err(|err| {
                 warn!("error compiling clipped surface shader: {err:?}");
+            })
+            .ok();
+
+        let saturated_surface = renderer
+            .compile_custom_texture_shader(
+                include_str!("saturated_surface.frag"),
+                &[UniformName::new("niri_saturation", UniformType::_1f)],
+            )
+            .map_err(|err| {
+                warn!("error compiling saturated surface shader: {err:?}");
             })
             .ok();
 
@@ -111,6 +123,7 @@ impl Shaders {
             border,
             shadow,
             clipped_surface,
+            saturated_surface,
             resize,
             gradient_fade,
             custom_resize: RefCell::new(None),

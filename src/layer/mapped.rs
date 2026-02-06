@@ -11,6 +11,7 @@ use crate::animation::Clock;
 use crate::layout::shadow::Shadow;
 use crate::niri_render_elements;
 use crate::render_helpers::renderer::NiriRenderer;
+use crate::render_helpers::saturated_surface::SaturatedSurfaceRenderElement;
 use crate::render_helpers::shadow::ShadowRenderElement;
 use crate::render_helpers::solid_color::{SolidColorBuffer, SolidColorRenderElement};
 use crate::render_helpers::surface::push_elements_from_surface_tree;
@@ -44,6 +45,7 @@ pub struct MappedLayer {
 niri_render_elements! {
     LayerSurfaceRenderElement<R> => {
         Wayland = WaylandSurfaceRenderElement<R>,
+        SaturatedSurface = SaturatedSurfaceRenderElement<R>,
         SolidColor = SolidColorRenderElement,
         Shadow = ShadowRenderElement,
     }
@@ -164,6 +166,7 @@ impl MappedLayer {
     ) {
         let scale = Scale::from(self.scale);
         let alpha = self.rules.opacity.unwrap_or(1.).clamp(0., 1.);
+        let saturation = self.rules.saturation.unwrap_or(1.).clamp(0., 1.);
         let location = location + self.bob_offset();
 
         if target.should_block_out(self.rules.block_out_from) {
@@ -182,6 +185,7 @@ impl MappedLayer {
             // Layer surfaces don't have extra geometry like windows.
             let buf_pos = location;
 
+            let sat_shader = SaturatedSurfaceRenderElement::shader(renderer).cloned();
             let surface = self.surface.wl_surface();
             push_elements_from_surface_tree(
                 renderer,
@@ -190,7 +194,17 @@ impl MappedLayer {
                 scale,
                 alpha,
                 Kind::ScanoutCandidate,
-                &mut |elem| push(elem.into()),
+                &mut |elem| {
+                    if saturation < 1.0 {
+                        if let Some(shader) = sat_shader.clone() {
+                            push(
+                                SaturatedSurfaceRenderElement::new(elem, shader, saturation).into(),
+                            );
+                            return;
+                        }
+                    }
+                    push(elem.into());
+                },
             );
         }
 
@@ -208,6 +222,7 @@ impl MappedLayer {
     ) {
         let scale = Scale::from(self.scale);
         let alpha = self.rules.opacity.unwrap_or(1.).clamp(0., 1.);
+        let saturation = self.rules.saturation.unwrap_or(1.).clamp(0., 1.);
         let location = location + self.bob_offset();
 
         if target.should_block_out(self.rules.block_out_from) {
@@ -217,6 +232,7 @@ impl MappedLayer {
         // Layer surfaces don't have extra geometry like windows.
         let buf_pos = location;
 
+        let sat_shader = SaturatedSurfaceRenderElement::shader(renderer).cloned();
         let surface = self.surface.wl_surface();
         for (popup, popup_offset) in PopupManager::popups_for_surface(surface) {
             // Layer surfaces don't have extra geometry like windows.
@@ -229,7 +245,17 @@ impl MappedLayer {
                 scale,
                 alpha,
                 Kind::ScanoutCandidate,
-                &mut |elem| push(elem.into()),
+                &mut |elem| {
+                    if saturation < 1.0 {
+                        if let Some(shader) = sat_shader.clone() {
+                            push(
+                                SaturatedSurfaceRenderElement::new(elem, shader, saturation).into(),
+                            );
+                            return;
+                        }
+                    }
+                    push(elem.into());
+                },
             );
         }
     }
