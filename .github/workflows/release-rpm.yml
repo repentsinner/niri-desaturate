@@ -80,7 +80,7 @@ jobs:
           path: ${{ steps.rpm.outputs.RPM_FILE }}
 
       - name: Attach RPM to GitHub Release
-        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
           files: ${{ steps.rpm.outputs.RPM_FILE }}
