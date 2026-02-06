@@ -62,7 +62,7 @@ jobs:
           ./target/release/niri completions zsh > _niri
 
       - name: Build RPM
-        run: cargo generate-rpm --set-metadata="version=${{ steps.version.outputs.VERSION }}"
+        run: cargo generate-rpm --set-metadata='version="${{ steps.version.outputs.VERSION }}"'
 
       - name: Identify RPM
         id: rpm
