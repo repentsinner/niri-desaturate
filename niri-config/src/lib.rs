@@ -1824,6 +1824,7 @@ mod tests {
                     },
                     draw_border_with_background: None,
                     opacity: None,
+                    saturation: None,
                     geometry_corner_radius: None,
                     clip_to_geometry: None,
                     baba_is_float: None,
@@ -1863,6 +1864,7 @@ mod tests {
                     ],
                     excludes: [],
                     opacity: None,
+                    saturation: None,
                     block_out_from: Some(
                         Screencast,
                     ),

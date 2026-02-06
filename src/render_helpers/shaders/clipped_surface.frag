@@ -25,6 +25,7 @@ uniform float niri_scale;
 uniform vec2 geo_size;
 uniform vec4 corner_radius;
 uniform mat3 input_to_geo;
+uniform float niri_saturation;
 
 float rounding_alpha(vec2 coords, vec2 size) {
     vec2 center;
@@ -66,6 +67,14 @@ void main() {
     } else {
         // Apply corner rounding inside geometry.
         color = color * rounding_alpha(coords_geo.xy * geo_size, geo_size);
+    }
+
+    // Desaturate: unpremultiply, compute luma, mix, re-premultiply.
+    if (niri_saturation < 1.0 && color.a > 0.0) {
+        vec3 rgb = color.rgb / color.a;
+        float luma = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+        rgb = mix(vec3(luma), rgb, niri_saturation);
+        color = vec4(rgb * color.a, color.a);
     }
 
     // Apply final alpha and tint.
